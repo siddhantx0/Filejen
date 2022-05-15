@@ -1,0 +1,29 @@
+loginIndex: 0
+username: null
+cpp: {
+    includes: [
+        #include <iostream>
+        #include <string>
+        #include <vector>
+
+        using namespace std;
+    ]
+    code: [
+        int main(){
+            return 1;
+        }
+    ]
+}
+java: {
+    includes: [
+        import java.util.*;
+        import java.io.*;
+    ]
+    code: [
+        public class **** {
+            public static void main(String[] args){
+                // TODO
+            }
+        }
+    ]
+}

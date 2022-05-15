@@ -1,0 +1,42 @@
+id: 0
+name: null
+supported filetypes: cpp, java, c, js, py
+2
+cpp
+java
+2
+$A
+#include <iostream>
+#include <string>
+#include <vector>
+
+using namespace std;
+
+int main(){
+    freopen("****", "r", stdin);
+    freopen("****", "w", stdout);
+    cout << "Hello, world!" << endl;
+}
+$B
+#include <iostream>
+
+using namespace std;
+
+int main(){
+    cout << "Hello, world! << endl;
+}
+1
+$A
+import java.util.*;
+import java.io.*;
+
+public class **** {
+    public static void main(String[] args){
+        try {
+            Scanner sc = new Scanner(****);
+            System.out.println("Hello, world!");
+        } catch(Exception e){
+            e.printStackTrace();
+        }
+    }
+}
