@@ -75,12 +75,10 @@ public class _Filejen {
         this.filename = sc.nextLine().trim();
         System.out.println("Enter filetype " + this.fileTypes.toString() + ": ");
         this.fileType = sc.nextLine().trim().toLowerCase();
-        if (!this.fileTypes.contains(this.fileType))
-            try {
-                throw new Exception("Faulty filetype input please try again.");
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+        if (!this.fileTypes.contains(this.fileType)) {
+            System.out.println("Faulty filetype input please try again.");
+            System.exit(0);
+        }
         System.out.println("Would you like to generate an input file? ");
         if (sc.nextLine().trim().toLowerCase().equals("y"))
             this.generateInputFile = true;
@@ -102,6 +100,37 @@ public class _Filejen {
             this.languages = new ArrayList<Language>();
             for (int i = 0; i < size; ++i)
                 this.languages.add(new Language(sc.nextLine().trim().toLowerCase()));
+
+            // for (Language l : languages) // working...
+            // System.out.println(l);
+
+            for (Language l : languages) {
+                if (!sc.hasNextLine())
+                    break;
+                final int NUMBEROFPRESETS = Integer.parseInt(sc.nextLine().trim());
+                l.commandToOutputMap = new HashMap<String, String>();
+
+                String s = sc.nextLine();
+
+                outer: for (int i = 0; i < NUMBEROFPRESETS; ++i) {
+                    String key = "", val = "";
+                    if (s.contains("$")) // this should always be true...
+                        key = s.substring(s.indexOf("$") + ("$").length());
+                    while (true && sc.hasNextLine()) {
+                        s = sc.nextLine();
+                        // if (s.equals("$/$/$"))
+                        // break outer;
+                        if (s.contains("$"))
+                            continue;
+                        val += s + "\n";
+                    }
+                    l.commandToOutputMap.put(key, val);
+                }
+
+                System.out.println("jesus on earth");
+                System.out.println(l.commandToOutputMap.toString());
+                // break;
+            }
             sc.close();
         } catch (Exception e) {
             e.printStackTrace();
@@ -119,6 +148,11 @@ public class _Filejen {
         public Language(String type) {
             this.type = type;
             this.commandToOutputMap = new HashMap<String, String>();
+        }
+
+        @Override
+        public String toString() {
+            return this.type;
         }
     }
 }

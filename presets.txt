@@ -4,6 +4,7 @@ supported filetypes: cpp, java, c, js, py
 2
 cpp
 java
+$$$
 2
 $A
 #include <iostream>
@@ -25,6 +26,7 @@ using namespace std;
 int main(){
     cout << "Hello, world! << endl;
 }
+$$$
 1
 $A
 import java.util.*;
@@ -40,3 +42,4 @@ public class **** {
         }
     }
 }
+$$$
