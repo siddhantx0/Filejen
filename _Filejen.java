@@ -1,4 +1,6 @@
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -17,6 +19,7 @@ public class _Filejen {
     private String fileType;
     private boolean completed;
     private boolean generateInputFile, generateOutputFile;
+    private String presets;
 
     // presets.txt instance variables
     private int visitedId;
@@ -29,6 +32,7 @@ public class _Filejen {
         try {
             Scanner sc = new Scanner(new File(presetsPath));
             String s = sc.nextLine();
+            this.presets = "";
             this.visitedId = Integer.parseInt(s.substring(s.indexOf("id: ") + ("id: ").length()));
             s = sc.nextLine();
             this.username = s.substring(s.indexOf("name: ") + ("name: ".length())).trim();
@@ -64,7 +68,27 @@ public class _Filejen {
     }
 
     private void quickInput() {
+        System.out.println("[Filename, Filetype, Presets(a, b, c ...), Inputgen, Outputgen]");
+        Scanner sc = new Scanner(System.in);
+        String input = sc.nextLine();
+        sc.close();
 
+        String[] in = input.split(("(?<=.)(?=\\p{Lu})"));
+        if (in.length < 4) {
+            System.out.println("Invalid input.");
+            System.exit(0);
+        }
+        for (int i = 0; i < in.length - 2; i++) {
+            if (i == 0)
+                this.filename = in[i];
+            else if (i == 1)
+                this.fileType = in[i];
+            else {
+                this.presets += in[i] + " ";
+            }
+        }
+        this.generateInputFile = (in[in.length - 2].toLowerCase().trim().equals("y"));
+        this.generateOutputFile = (in[in.length - 1].toLowerCase().trim().equals("y"));
     }
 
     private void input() {
@@ -79,13 +103,26 @@ public class _Filejen {
             System.out.println("Faulty filetype input please try again.");
             System.exit(0);
         }
-        System.out.println("Would you like to generate an input file? ");
+
+        // TODO: ADD PRESETS LISTS SPECIFIC TO THE LANGUAGE...
+        System.out.println("Please enter presets: ADD PRESETS LISTS SPECIFIC TO THE LANGUAGE...");
+        this.presets = sc.nextLine().trim(); // parsed in generate method
+
+        System.out.println("Would you like to generate an input file? [Y/N]");
         if (sc.nextLine().trim().toLowerCase().equals("y"))
             this.generateInputFile = true;
-        System.out.println("Would you like to generate an output file? ");
+        System.out.println("Would you like to generate an output file? [Y/N]");
         if (sc.nextLine().trim().toLowerCase().equals("y"))
             this.generateOutputFile = true;
-
+        System.out.println("Would you like to open a vscode view with generated files? [Y/N]");
+        if (sc.nextLine().trim().toLowerCase().equals("y")) {
+            System.out.println("Opening new vscode view...");
+            openView();
+        }
+        this.completed = true;
+        if (this.completed) {
+            System.out.println("Thank you for using Filejen.");
+        }
         sc.close();
     }
 
@@ -95,41 +132,49 @@ public class _Filejen {
             for (int i = 0; i < 3; ++i)
                 sc.nextLine();
             int size = Integer.parseInt(sc.nextLine());
-            if (size > fileTypes.size())
-                throw new Exception("Faulty preset filetype setup...");
-            this.languages = new ArrayList<Language>();
+            if (size > this.fileTypes.size()) {
+                System.out.println(
+                        "Faulty setup in presets.txt file. Line 4 should be the number of precoded preset languages.");
+                System.exit(0);
+            }
+
+            this.languages = new ArrayList<_Filejen.Language>();
+
             for (int i = 0; i < size; ++i)
                 this.languages.add(new Language(sc.nextLine().trim().toLowerCase()));
+            System.out.println(sc.nextLine()); // $$$
+            for (int k = 0; k < this.languages.size(); k++) {
+                currentLanguage: while (true && sc.hasNextLine()) {
+                    int iterations = Integer.parseInt(sc.nextLine().trim());
+                    String s = sc.nextLine();
 
-            // for (Language l : languages) // working...
-            // System.out.println(l);
-
-            for (Language l : languages) {
-                if (!sc.hasNextLine())
-                    break;
-                final int NUMBEROFPRESETS = Integer.parseInt(sc.nextLine().trim());
-                l.commandToOutputMap = new HashMap<String, String>();
-
-                String s = sc.nextLine();
-
-                outer: for (int i = 0; i < NUMBEROFPRESETS; ++i) {
-                    String key = "", val = "";
-                    if (s.contains("$")) // this should always be true...
-                        key = s.substring(s.indexOf("$") + ("$").length());
-                    while (true && sc.hasNextLine()) {
-                        s = sc.nextLine();
-                        // if (s.equals("$/$/$"))
-                        // break outer;
+                    currentLanguagePresetIndexI: for (int i = 0; i < iterations; i++) {
+                        if (!sc.hasNextLine())
+                            break currentLanguage;
+                        String key = "", val = "";
                         if (s.contains("$"))
-                            continue;
-                        val += s + "\n";
+                            key = s.substring(s.indexOf("$") + ("$").length());
+                        System.out.println(key);
+                        valueInitialization: while (sc.hasNextLine()) {
+                            String temp = sc.nextLine() + "\n";
+                            if (temp.contains("****"))
+                                temp = temp.substring(0, temp.indexOf("****")) + this.filename
+                                        + temp.substring(temp.indexOf("****") + ("****").length());
+                            if (temp.contains("$$$"))
+                                break currentLanguagePresetIndexI;
+                            else if (temp.contains("$")) {
+                                System.out.println(key);
+                                s = temp;
+                                break valueInitialization;
+                            }
+                            val += temp;
+                        }
+                        this.languages.get(k).commandToOutputMap.put(key, val);
                     }
-                    l.commandToOutputMap.put(key, val);
                 }
-
-                System.out.println("jesus on earth");
-                System.out.println(l.commandToOutputMap.toString());
-                // break;
+            }
+            for (Language l : this.languages) {
+                System.out.println(l.type + "\n" + l.commandToOutputMap.toString());
             }
             sc.close();
         } catch (Exception e) {
@@ -138,7 +183,52 @@ public class _Filejen {
     }
 
     private void generate() {
+        File f = new File(this.filename + "." + this.fileType);
+        try {
+            FileWriter fw = new FileWriter(f);
+            Scanner sc = new Scanner(this.presets);
+            Language l = null;
+            for (Language lang : this.languages)
+                if (lang.type.equals(this.fileType)) {
+                    l = lang;
+                    break;
+                }
+            while (sc.hasNext()) {
+                fw.write(l.commandToOutputMap.get(sc.next().trim()));
+            }
+            fw.close();
+            sc.close();
+        } catch (IOException e1) {
+            e1.printStackTrace();
+        }
+        try {
+            f.createNewFile();
+        } catch (Exception e) {
+            System.out.println("Error: filetype already exists in this directory");
+            System.exit(0);
+        }
+        if (this.generateInputFile) {
+            File in = new File(this.filename + ".in");
+            try {
+                in.createNewFile();
+            } catch (Exception e) {
+                System.out.println("Error: 'in' filetype already exists in this directory");
+                System.exit(0);
+            }
+        }
+        if (this.generateOutputFile) {
+            File in = new File(this.filename + ".out");
+            try {
+                in.createNewFile();
+            } catch (Exception e) {
+                System.out.println("Error: 'out' filetype already exists in this directory");
+                System.exit(0);
+            }
+        }
+    }
 
+    private void openView() {
+        // TODO: Complete openView.
     }
 
     class Language {
