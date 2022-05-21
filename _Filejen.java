@@ -1,4 +1,5 @@
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -30,6 +31,7 @@ public class _Filejen {
     public _Filejen() {
         System.out.println("Welcome to Filejen.");
         try {
+            // parsing user information
             Scanner sc = new Scanner(new File(presetsPath));
             String s = sc.nextLine();
             this.presets = "";
@@ -59,9 +61,22 @@ public class _Filejen {
 
             // TODO: COMPLETE THIS!!!
             parsePath();
+            System.out.println("*".repeat(100) + "\n");
+            System.out.println("*".repeat(100) + "\n");
+            System.out.println("*".repeat(100));
 
+            for (Language l : languages) {
+                System.out.println(l.commandToOutputMap.toString());
+            }
+
+            System.out.println("*".repeat(100) + "\n");
+            System.out.println("*".repeat(100) + "\n");
+            System.out.println("*".repeat(100) + "\n");
+            System.exit(0);
             // TODO: COMPLETE THIS!!!
             generate();
+
+            // CREATE: update method that updates the presets.txt file
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -129,61 +144,65 @@ public class _Filejen {
     private void parsePath() {
         try {
             Scanner sc = new Scanner(new File(presetsPath));
-            for (int i = 0; i < 3; ++i)
+            String s = "";
+            for (int i = 0; i < 3; i++)
                 sc.nextLine();
-            int size = Integer.parseInt(sc.nextLine());
-            if (size > this.fileTypes.size()) {
-                System.out.println(
-                        "Faulty setup in presets.txt file. Line 4 should be the number of precoded preset languages.");
+            // parsing language features
+            int nLanguages = Integer.parseInt(sc.nextLine().trim());
+            this.languages = new ArrayList<_Filejen.Language>();
+            for (int i = 0; i < nLanguages; i++)
+                this.languages.add(new Language(sc.nextLine().trim()));
+            if (!sc.nextLine().trim().equals("$$$")) {
+                System.out.println("Brocken");
                 System.exit(0);
             }
-
-            this.languages = new ArrayList<_Filejen.Language>();
-
-            for (int i = 0; i < size; ++i)
-                this.languages.add(new Language(sc.nextLine().trim().toLowerCase()));
-            System.out.println(sc.nextLine()); // $$$
-            for (int k = 0; k < this.languages.size(); k++) {
-                currentLanguage: while (true && sc.hasNextLine()) {
-                    int iterations = Integer.parseInt(sc.nextLine().trim());
-                    String s = sc.nextLine();
-
-                    currentLanguagePresetIndexI: for (int i = 0; i < iterations; i++) {
-                        if (!sc.hasNextLine())
-                            break currentLanguage;
-                        String key = "", val = "";
-                        if (s.contains("$"))
-                            key = s.substring(s.indexOf("$") + ("$").length());
-                        System.out.println(key);
-                        valueInitialization: while (sc.hasNextLine()) {
-                            String temp = sc.nextLine() + "\n";
-                            if (temp.contains("****"))
-                                temp = temp.substring(0, temp.indexOf("****")) + this.filename
-                                        + temp.substring(temp.indexOf("****") + ("****").length());
-                            if (temp.contains("$$$"))
-                                break currentLanguagePresetIndexI;
-                            else if (temp.contains("$")) {
-                                System.out.println(key);
-                                s = temp;
-                                break valueInitialization;
-                            }
-                            val += temp;
-                        }
-                        this.languages.get(k).commandToOutputMap.put(key, val);
+            boolean reachedNewLang = true;
+            for (int i = 0; i < this.languages.size(); i++) {
+                String key = "", val = "";
+                int k = 0;
+                if (reachedNewLang) {
+                    reachedNewLang = false;
+                    System.out.println(s);
+                    k = sc.nextInt(); // number of presets of this specific language
+                    sc.nextLine();
+                }
+                s = sc.nextLine();
+                in_outer: for (; k >= 0; k--) {
+                    key = s.substring(1).trim();
+                    while (sc.hasNextLine()) {
+                        s = sc.nextLine();
+                        if (s.trim().equals("$$$")) {
+                            reachedNewLang = true;
+                            break in_outer;
+                        } else if (s.contains("$"))
+                            break;
+                        else if (s.contains("****"))
+                            s = s.substring(0, s.indexOf("****")) + this.filename
+                                    + s.substring(s.indexOf("****") + "****".length());
+                        val += s + "\n";
                     }
+                    this.languages.get(i).commandToOutputMap.put(key, val);
+                    // System.out.println(String.format("%s%s", key, val.substring(0, 10)));
                 }
             }
-            for (Language l : this.languages) {
-                System.out.println(l.type + "\n" + l.commandToOutputMap.toString());
-            }
+
+            // closing scanner
             sc.close();
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (FileNotFoundException e) {
+            System.out.println(
+                    "Unexpected Error: parsePath() failed to compute. Please check presets.txt or parsePath()");
+            System.exit(0);
         }
     }
 
     private void generate() {
         File f = new File(this.filename + "." + this.fileType);
+
+        if (f.exists()) {
+            System.out.println(String.format("File: \"%s\" already exists.", f.toString()));
+            System.exit(0);
+        }
+
         try {
             FileWriter fw = new FileWriter(f);
             Scanner sc = new Scanner(this.presets);
